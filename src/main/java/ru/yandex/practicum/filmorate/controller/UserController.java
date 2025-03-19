@@ -40,7 +40,7 @@ public class UserController {
             user.setName(user.getLogin());
         }
         try {
-            if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate()) ) {
+            if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
                 log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
                 throw new ValidationException("Указана дата рождения в будущем");
             }
