@@ -39,14 +39,12 @@ public class UserController {
         if (user.getName() == null) {
             user.setName(user.getLogin());
         }
-        try {
-            if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
-                log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
-                throw new ValidationException("Указана дата рождения в будущем");
-            }
-        } catch (NullPointerException e) {
+        if (user.getBirthday() == null) {
             log.warn("Ошибка валидации: Необходимо указать дату рождения для {}", user);
             throw new ValidationException("Необходимо указать дату рождения");
+        } else if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
+            log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
+            throw new ValidationException("Указана дата рождения в будущем");
         }
         user.setId(getNextId());
         users.put(user.getId(), user);

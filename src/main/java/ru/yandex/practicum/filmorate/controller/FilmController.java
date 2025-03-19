@@ -26,23 +26,19 @@ public class FilmController {
 
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
-        try {
-            if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-                log.warn("Ошибка валидации: Дата релиза должна быть позже 28.12.1895 для {}", film);
-                throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
-            }
-        } catch (NullPointerException e) {
+        if (film.getReleaseDate() == null) {
             log.warn("Ошибка валидации: Должна быть указана дата релиза фильма для {}", film);
             throw new ValidationException("Должна быть указана дата релиза фильма");
+        } else if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
+            log.warn("Ошибка валидации: Дата релиза должна быть позже 28.12.1895 для {}", film);
+            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
         }
-        try {
-            if (film.getDuration().isNegative()) {
-                log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
-                throw new ValidationException("Продолжительность не может быть отрицательным числом");
-            }
-        } catch (NullPointerException e) {
+        if (film.getDuration() == null) {
             log.warn("Ошибка валидации: Должны быть указана продолжительность фильма для {}", film);
             throw new ValidationException("Должны быть указана продолжительность фильма");
+        } else if (film.getDuration().isNegative()) {
+            log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
+            throw new ValidationException("Продолжительность не может быть отрицательным числом");
         }
         film.setId(getNextId());
         films.put(film.getId(), film);
