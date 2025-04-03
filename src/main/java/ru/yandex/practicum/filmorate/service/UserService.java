@@ -102,7 +102,7 @@ public class UserService {
 
     //Friends
 
-    public void addFriend (Long idOfFirstFriend, Long idOfSecondFriend) {
+    public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
         User firstUser = userStorage.getUserById(idOfFirstFriend);
         User secondUser = userStorage.getUserById(idOfSecondFriend);
         firstUser.getFriends().add(idOfSecondFriend);
@@ -110,7 +110,7 @@ public class UserService {
         log.debug("{} and {} are friends", firstUser, secondUser);
     }
 
-    public void removeFriend (Long idOfFirstFriend, Long idOfSecondFriend) {
+    public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
         User firstUser = userStorage.getUserById(idOfFirstFriend);
         User secondUser = userStorage.getUserById(idOfSecondFriend);
         firstUser.getFriends().remove(idOfSecondFriend);
@@ -118,7 +118,7 @@ public class UserService {
         log.debug("{} and {} are not friends", firstUser, secondUser);
     }
 
-    public Set<User> commonFriends (Long idOfFirstFriend, Long idOfSecondFriend) {
+    public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
         Set<User> friendsOfFirstFriend = new HashSet<>();
         Set<User> friendsOfSecondFriend = new HashSet<>();
         Set<Long> friendsIds1 = userStorage.getUserById(idOfFirstFriend).getFriends();
@@ -134,7 +134,7 @@ public class UserService {
         return friendsOfFirstFriend.stream().filter(friendsOfSecondFriend::contains).collect(Collectors.toSet());
     }
 
-    public Set<User> friendsOfUser (Long id) {
+    public Set<User> friendsOfUser(Long id) {
         Set<User> friends = new HashSet<>();
         for (Long friendsId: userStorage.getUserById(id).getFriends()) {
             User friend = userStorage.getUserById(friendsId);

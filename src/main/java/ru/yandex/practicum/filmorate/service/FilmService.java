@@ -100,14 +100,14 @@ public class FilmService {
 
     //Likes
 
-    public void addLike (Long filmId, Long userId) {
+    public void addLike(Long filmId, Long userId) {
         User user = userStorage.getUserById(userId);
         Film film = filmStorage.getFilmById(filmId);
         film.getLikes().add(user.getId());
         log.debug("The user {} added like to the film {}", user, film);
     }
 
-    public void removeLike (Long filmId, Long userId) {
+    public void removeLike(Long filmId, Long userId) {
         User user = userStorage.getUserById(userId);
         Film film = filmStorage.getFilmById(filmId);
         film.getLikes().remove(user.getId());
