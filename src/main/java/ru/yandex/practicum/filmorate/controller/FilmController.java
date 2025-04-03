@@ -1,98 +1,59 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-
-import java.time.LocalDate;
-import java.time.Month;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/films")
-@Slf4j
+@RequiredArgsConstructor
 public class FilmController {
 
-    private final Map<Long, Film> films = new HashMap<>();
+    private final FilmService filmService;
 
     @GetMapping
     public Collection<Film> allFilms() {
-        return films.values();
+        return filmService.allFilms();
     }
 
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
-        if (film.getReleaseDate() == null) {
-            log.warn("Ошибка валидации: Должна быть указана дата релиза фильма для {}", film);
-            throw new ValidationException("Должна быть указана дата релиза фильма");
-        } else if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-            log.warn("Ошибка валидации: Дата релиза должна быть позже 28.12.1895 для {}", film);
-            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
-        }
-        if (film.getDuration() == null) {
-            log.warn("Ошибка валидации: Должны быть указана продолжительность фильма для {}", film);
-            throw new ValidationException("Должны быть указана продолжительность фильма");
-        } else if (film.getDuration().isNegative()) {
-            log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
-            throw new ValidationException("Продолжительность не может быть отрицательным числом");
-        }
-        film.setId(getNextId());
-        films.put(film.getId(), film);
-        log.info("Добавлен фильм {}", film);
-        return film;
-    }
-
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+        return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film newFilm) {
-        if (newFilm.getId() == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для {}", newFilm);
-            throw new ValidationException("Id должен быть указан");
-        }
-        if (films.containsKey(newFilm.getId())) {
-            Film oldFilm = films.get(newFilm.getId());
-            if (newFilm.getName() == null) {
-                oldFilm.setName(oldFilm.getName());
-            } else {
-                oldFilm.setName(newFilm.getName());
-            }
-            if (newFilm.getDescription() == null) {
-                oldFilm.setDescription(oldFilm.getDescription());
-            } else {
-                oldFilm.setDescription(newFilm.getDescription());
-            }
-            if (newFilm.getReleaseDate() == null) {
-                oldFilm.setReleaseDate(oldFilm.getReleaseDate());
-            } else if (newFilm.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-                log.warn("Ошибка валидации: Дата выхода фильма должна быть позже 28.12.1895 для {}", newFilm);
-                throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
-            } else {
-                oldFilm.setReleaseDate(newFilm.getReleaseDate());
-            }
-            if (newFilm.getDuration() == null) {
-                oldFilm.setDuration(oldFilm.getDuration());
-            } else if (newFilm.getDuration().isNegative()) {
-                log.warn("Ошибка валидации: Продолжительность фильма не может быть отрицательным числом для {}", newFilm);
-                throw new ValidationException("Продолжительность не может быть отрицательным числом");
-            } else {
-                oldFilm.setDuration(newFilm.getDuration());
-            }
-            log.info("Обновлен фильм {}", oldFilm);
-            return oldFilm;
-        }
-        log.warn("Ошибка валидации: Фильм не найден для id = {}", newFilm.getId());
-        throw new ValidationException("Фильм с id = " + newFilm.getId() + " не найден");
+        return filmService.updateFilm(newFilm);
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable Long id) {
+        return filmService.getFilmById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public Film deleteFilmById(@PathVariable Long id) {
+        return filmService.deleteFilmById(id);
+    }
+
+    //Likes
+
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike (@PathVariable Long id, @PathVariable Long userId) {
+        filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void removeLike (@PathVariable Long id, @PathVariable Long userId) {
+        filmService.removeLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
+        return filmService.getPopularFilms(count);
     }
 }
