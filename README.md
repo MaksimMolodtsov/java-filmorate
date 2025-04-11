@@ -3,6 +3,8 @@ Template repository for Filmorate project.
 
 ![ER](/ER.png)
 
+```declarative
+
 users
 -------
 user_id int PK
