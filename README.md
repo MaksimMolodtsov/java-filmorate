@@ -20,27 +20,30 @@ name varchar
 description varchar
 release_date date
 duration int
-mpa_rating_id int FK >- mpa_rating.mpa_rating_id
+rating_id int FK >- mpa_rating.rating_id
 
 mpa_rating
 -------
-mpa_rating_id int PK
-mpa_rating varchar
+rating_id int PK
+rating varchar
+
+film_genres
+-------
+film_id int FK >- films.film_id
+genre_id int FK >- genres.genre_id
 
 genres
 -------
-film_id int FK >- films.film_id
 genre_id int PK
 title varchar
 
 likes
 -------
-id int PK
 film_id int FK >- films.film_id
 user_id int FK >- users.user_id
 
 friends
 -------
-couple_id int PK
 user_id int FK >- users.user_id
 friends_id int FK >- users.user_id
+friendship boolean
