@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +24,9 @@ public class Film {
     @JsonSerialize(using = DurationSerializer.class)
     private Duration duration;
     private Set<Long> likes = new HashSet<>();
+    private Set<Genre> genre = new HashSet<>();
+    @NotNull
+    private Mpa mpa;
 
     @Builder
     public Film(Long id, Duration duration, LocalDate releaseDate, String description, String name) {
