@@ -31,7 +31,12 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> allUsers() {
-        String query = "SELECT * FROM users;";
+        String query = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS " +
+                "birthday, ARRAY_AGG(DISTINCT f1.friend_id) AS followers, ARRAY_AGG(DISTINCT f2.user_id) AS " +
+                "friends FROM users AS u " +
+                "LEFT JOIN friends AS f1 ON u.user_id = f1.user_id " +
+                "LEFT JOIN friends AS f2 ON u.user_id = f2.friend_id " +
+                "GROUP BY u.user_id;";
         return jdbc.query(query, mapper);
     }
 
@@ -58,7 +63,7 @@ public class UserDbStorage implements UserStorage {
             throw new NotFoundException("Ошибка данных пользователя");
         }
         user.setId(keyHolder.getKeyAs(Long.class));
-        return getUserById(user.getId());
+        return user;
     }
 
     @Override
@@ -70,24 +75,38 @@ public class UserDbStorage implements UserStorage {
         if (rowsUpdated == 0) {
             throw new RuntimeException("Не удалось обновить данные");
         }
-        return getUserById(newUser.getId());
+        return newUser;
     }
 
     @Override
     public User getUserById(Long id) {
         try {
-            String query = "SELECT * FROM users WHERE user_id = ?;";
+            String query = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS" +
+                    " birthday, ARRAY_AGG(DISTINCT f1.friend_id) AS followers, ARRAY_AGG(DISTINCT f2.user_id) AS " +
+                    "friends FROM users AS u " +
+                    "LEFT JOIN friends AS f1 ON u.user_id = f1.user_id " +
+                    "LEFT JOIN friends AS f2 ON u.user_id = f2.friend_id " +
+                    "WHERE u.user_id = ? " +
+                    "GROUP BY u.user_id;";
             return jdbc.queryForObject(query, mapper, id);
         } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException(String.format("Пользователь %d не найден", id));
+            throw new NotFoundException("Пользователь не найден");
         }
     }
 
     @Override
     public User deleteUserById(Long id) {
-        User user = getUserById(id);
-        String query = "DELETE FROM users WHERE user_id = ?;";
-        jdbc.update(query, id);
+        User user;
+        String queryGet = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS " +
+                "birthday, NULL AS followers, NULL AS friends " +
+                "FROM users AS u WHERE u.user_id = ?;";
+        String queryDelete = "DELETE FROM users WHERE user_id = ?;";
+        try {
+            user = jdbc.queryForObject(queryGet, mapper, id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundException("Пользователь не найден");
+        }
+        jdbc.update(queryDelete, id);
         return user;
     }
 

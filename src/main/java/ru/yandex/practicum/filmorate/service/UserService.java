@@ -104,15 +104,15 @@ public class UserService {
     //Friends
 
     public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        User firstUser = userStorage.getUserById(idOfFirstFriend);
-        User secondUser = userStorage.getUserById(idOfSecondFriend);
+        User firstUser = getUserById(idOfFirstFriend);
+        User secondUser = getUserById(idOfSecondFriend);
         userStorage.addFriend(idOfFirstFriend, idOfSecondFriend);
         log.debug("{} and {} are friends", firstUser, secondUser);
     }
 
     public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        User firstUser = userStorage.getUserById(idOfFirstFriend);
-        User secondUser = userStorage.getUserById(idOfSecondFriend);
+        User firstUser = getUserById(idOfFirstFriend);
+        User secondUser = getUserById(idOfSecondFriend);
         userStorage.removeFriend(idOfFirstFriend, idOfSecondFriend);
         log.debug("{} and {} are not friends", firstUser, secondUser);
     }
@@ -120,8 +120,8 @@ public class UserService {
     public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
         Set<User> friendsOfFirstFriend = new HashSet<>();
         Set<User> friendsOfSecondFriend = new HashSet<>();
-        Set<Long> friendsIds1 = userStorage.getUserById(idOfFirstFriend).getFriends();
-        Set<Long> friendsIds2 = userStorage.getUserById(idOfSecondFriend).getFriends();
+        Set<Long> friendsIds1 = getUserById(idOfFirstFriend).getFriends();
+        Set<Long> friendsIds2 = getUserById(idOfSecondFriend).getFriends();
         for (Long id: friendsIds1) {
             User user = userStorage.getUserById(id);
             friendsOfFirstFriend.add(user);
@@ -135,8 +135,8 @@ public class UserService {
 
     public Set<User> friendsOfUser(Long id) {
         Set<User> friends = new HashSet<>();
-        for (Long friendsId: userStorage.getUserById(id).getFriends()) {
-            User friend = userStorage.getUserById(friendsId);
+        for (Long friendsId: getUserById(id).getFriends()) {
+            User friend = getUserById(friendsId);
             friends.add(friend);
         }
         return friends;
