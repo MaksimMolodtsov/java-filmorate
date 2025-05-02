@@ -57,4 +57,20 @@ public class InMemoryUserStorage implements UserStorage {
                 .orElse(0);
         return ++currentMaxId;
     }
+
+    @Override
+    public void addFriend(Long id1, Long id2) {
+        User user1 = getUserById(id1);
+        User user2 = getUserById(id2);
+        user1.getFriends().add(id2);
+        user2.getFollowers().add(id1);
+    }
+
+    @Override
+    public void removeFriend(Long id1, Long id2) {
+        User user1 = getUserById(id1);
+        User user2 = getUserById(id2);
+        user1.getFriends().remove(id2);
+        user2.getFollowers().remove(id1);
+    }
 }

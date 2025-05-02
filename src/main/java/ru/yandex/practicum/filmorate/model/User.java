@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -17,17 +16,10 @@ public class User {
     private String email;
     @NotBlank
     private String login;
+    @NotBlank
     private String name;
     private LocalDate birthday;
-    private final Set<Long> friends = new HashSet<>();
+    private Set<Long> friends = new HashSet<>();
+    private Set<Long> followers = new HashSet<>();
 
-
-    @Builder
-    public User(Long id, LocalDate birthday, String name, String login, String email) {
-        this.id = id;
-        this.birthday = birthday;
-        this.name = name;
-        this.login = login;
-        this.email = email;
-    }
 }

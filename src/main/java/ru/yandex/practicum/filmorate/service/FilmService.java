@@ -103,22 +103,19 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         User user = userStorage.getUserById(userId);
         Film film = filmStorage.getFilmById(filmId);
-        film.getLikes().add(user.getId());
+        filmStorage.addLike(filmId, userId);
         log.debug("The user {} added like to the film {}", user, film);
     }
 
     public void removeLike(Long filmId, Long userId) {
         User user = userStorage.getUserById(userId);
         Film film = filmStorage.getFilmById(filmId);
-        film.getLikes().remove(user.getId());
+        filmStorage.removeLike(filmId, userId);
         log.debug("The user {} deleted the like of the film {}", user, film);
     }
 
     public List<Film> getPopularFilms(Integer count) {
         if (count == null || count < 0) throw new IllegalArgumentException("Count should be a positive");
-        return filmStorage.allFilms().stream()
-                .sorted((film1, film2) -> film2.getLikes().size() - film1.getLikes().size())
-                .limit(count)
-                .toList();
+        return filmStorage.getPopularFilms(count);
     }
 }

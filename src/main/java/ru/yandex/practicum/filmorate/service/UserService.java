@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,32 +22,6 @@ public class UserService {
 
     public Collection<User> allUsers() {
         return userStorage.allUsers();
-    }
-
-    public User addUser(User user) {
-        if (user.getEmail() == null) {
-            log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
-            throw new ValidationException("e-mail должен быть указан для");
-        } else {
-            for (User u : allUsers()) {
-                if (u.getEmail().equals(user.getEmail())) {
-                    log.warn("Этот e-mail уже используется для {}", u);
-                    throw new ValidationException("Этот e-mail уже используется");
-                }
-            }
-        }
-        if (user.getName() == null) {
-            user.setName(user.getLogin());
-        }
-        if (user.getBirthday() == null) {
-            log.warn("Ошибка валидации: Необходимо указать дату рождения для {}", user);
-            throw new ValidationException("Необходимо указать дату рождения");
-        } else if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
-            log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
-            throw new ValidationException("Указана дата рождения в будущем");
-        }
-        log.debug("Добавлен пользователь {}", user);
-        return userStorage.addUser(user);
     }
 
     public User updateUser(User newUser) {
@@ -82,6 +57,32 @@ public class UserService {
         return userStorage.updateUser(oldUser);
     }
 
+    public User addUser(User user) {
+        if (user.getEmail() == null) {
+            log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
+            throw new ValidationException("e-mail должен быть указан для");
+        } else {
+            for (User u : allUsers()) {
+                if (u.getEmail().equals(user.getEmail())) {
+                    log.warn("Этот e-mail уже используется для {}", u);
+                    throw new ValidationException("Этот e-mail уже используется");
+                }
+            }
+        }
+        if (user.getName() == null) {
+            user.setName(user.getLogin());
+        }
+        if (user.getBirthday() == null) {
+            log.warn("Ошибка валидации: Необходимо указать дату рождения для {}", user);
+            throw new ValidationException("Необходимо указать дату рождения");
+        } else if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
+            log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
+            throw new ValidationException("Указана дата рождения в будущем");
+        }
+        log.debug("Добавлен пользователь {}", user);
+        return userStorage.addUser(user);
+    }
+
     public User getUserById(Long id) {
         if (id == null) {
             log.warn("Ошибка валидации: Id должен быть указан для запрашиваемого пользователя");
@@ -105,16 +106,14 @@ public class UserService {
     public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
         User firstUser = userStorage.getUserById(idOfFirstFriend);
         User secondUser = userStorage.getUserById(idOfSecondFriend);
-        firstUser.getFriends().add(idOfSecondFriend);
-        secondUser.getFriends().add(idOfFirstFriend);
+        userStorage.addFriend(idOfFirstFriend, idOfSecondFriend);
         log.debug("{} and {} are friends", firstUser, secondUser);
     }
 
     public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
         User firstUser = userStorage.getUserById(idOfFirstFriend);
         User secondUser = userStorage.getUserById(idOfSecondFriend);
-        firstUser.getFriends().remove(idOfSecondFriend);
-        secondUser.getFriends().remove(idOfFirstFriend);
+        userStorage.removeFriend(idOfFirstFriend, idOfSecondFriend);
         log.debug("{} and {} are not friends", firstUser, secondUser);
     }
 
