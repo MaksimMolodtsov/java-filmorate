@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,7 @@ public class UserService {
     }
 
     public User addUser(User user) {
+        if (user == null) throw new IllegalArgumentException("Пустой объект");
         if (user.getEmail() == null) {
             log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
             throw new ValidationException("e-mail должен быть указан для");
@@ -104,10 +106,11 @@ public class UserService {
     //Friends
 
     public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        User firstUser = getUserById(idOfFirstFriend);
-        User secondUser = getUserById(idOfSecondFriend);
+        if (idOfFirstFriend == null || idOfSecondFriend == null || idOfFirstFriend < 1 || idOfSecondFriend < 1)
+            throw new ValidationException("Неверный id");
+        if (Objects.equals(idOfFirstFriend, idOfSecondFriend)) throw new IllegalArgumentException("Одинаковые id");
         userStorage.addFriend(idOfFirstFriend, idOfSecondFriend);
-        log.debug("{} and {} are friends", firstUser, secondUser);
+        log.debug("{} added {} in friends", idOfFirstFriend, idOfSecondFriend);
     }
 
     public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
@@ -120,8 +123,8 @@ public class UserService {
     public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
         Set<User> friendsOfFirstFriend = new HashSet<>();
         Set<User> friendsOfSecondFriend = new HashSet<>();
-        Set<Long> friendsIds1 = getUserById(idOfFirstFriend).getFriends();
-        Set<Long> friendsIds2 = getUserById(idOfSecondFriend).getFriends();
+        Set<Long> friendsIds1 = userStorage.getUserById(idOfFirstFriend).getFriends();
+        Set<Long> friendsIds2 = userStorage.getUserById(idOfSecondFriend).getFriends();
         for (Long id: friendsIds1) {
             User user = userStorage.getUserById(id);
             friendsOfFirstFriend.add(user);
@@ -134,11 +137,9 @@ public class UserService {
     }
 
     public Set<User> friendsOfUser(Long id) {
-        Set<User> friends = new HashSet<>();
-        for (Long friendsId: getUserById(id).getFriends()) {
-            User friend = getUserById(friendsId);
-            friends.add(friend);
-        }
-        return friends;
+        if (id == null || id < 1) throw new IllegalArgumentException("Неверный id");
+        User user = userStorage.getUserById(id);
+        if (user.getFriends().isEmpty()) return Set.of();
+        return null;
     }
 }

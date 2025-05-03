@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS friends (
-    user_id int REFERENCES users (user_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    friend_id int REFERENCES users (user_id) ON DELETE CASCADE ON UPDATE RESTRICT,
+    user_id int,
+    friend_id int,
     CONSTRAINT friends_pk PRIMARY KEY (user_id, friend_id)
 );
 
@@ -14,8 +14,9 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS likes (
-    film_id int REFERENCES users (user_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    user_id int REFERENCES films (film_id) ON DELETE CASCADE ON UPDATE RESTRICT
+    user_id int,
+    film_id int,
+    CONSTRAINT likes_pk PRIMARY KEY (user_id, film_id)
 );
 
 CREATE TABLE IF NOT EXISTS films (
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS films (
     description varchar(200),
     release_date date,
     duration int,
-    rating_id int REFERENCES mpa_rating (rating_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    rating_id int,
     CONSTRAINT films_pk PRIMARY KEY (film_id)
 );
 
@@ -35,8 +36,8 @@ CREATE TABLE IF NOT EXISTS mpa_rating (
 );
 
 CREATE TABLE IF NOT EXISTS film_genres (
-    film_id int REFERENCES films (film_id) ON DELETE CASCADE ON UPDATE RESTRICT,
-    genre_id int REFERENCES genres (genre_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+    film_id int,
+    genre_id int,
     CONSTRAINT film_genres_pk PRIMARY KEY (film_id, genre_id)
 );
 

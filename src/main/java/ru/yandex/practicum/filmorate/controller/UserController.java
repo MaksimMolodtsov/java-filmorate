@@ -54,7 +54,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public Set<User> friendsOfUser(@PathVariable Long id) {
+    public Collection<User> friendsOfUser(@PathVariable Long id) {
         return userService.friendsOfUser(id);
     }
 

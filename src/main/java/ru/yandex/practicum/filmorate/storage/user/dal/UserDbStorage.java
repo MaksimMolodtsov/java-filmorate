@@ -8,6 +8,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -17,8 +18,8 @@ import ru.yandex.practicum.filmorate.storage.user.dal.mappers.UserRowMapper;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.Types;
 import java.util.Collection;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Repository
@@ -42,19 +43,15 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User addUser(User user) {
-        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        String query = "INSERT INTO users (email, login, name, birthday) VALUES (?,?,?,?);";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        String query = "INSERT INTO users (email, login, name, birthday) VALUES (?, ?, ?, ?);";
         try {
             jdbc.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(query, new String[]{"user_id"});
                 ps.setString(1, user.getEmail());
                 ps.setString(2, user.getLogin());
                 ps.setString(3, user.getName());
-                if (user.getBirthday() != null) {
-                    ps.setDate(4, Date.valueOf(user.getBirthday()));
-                } else {
-                    ps.setNull(4, Types.DATE);
-                }
+                ps.setDate(4, Date.valueOf(user.getBirthday()));
                 return ps;
             }, keyHolder);
         } catch (DuplicateKeyException e) {
@@ -62,8 +59,8 @@ public class UserDbStorage implements UserStorage {
         } catch (DataIntegrityViolationException ex) {
             throw new NotFoundException("Ошибка данных пользователя");
         }
-        user.setId(keyHolder.getKeyAs(Long.class));
-        return user;
+        user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        return getUserById(user.getId());
     }
 
     @Override
@@ -112,8 +109,16 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long id1, Long id2) {
-        getUserById(id1);
-        getUserById(id2);
+        String queryGet = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, " +
+                "u.birthday AS birthday, " +
+                "NULL AS friends, NULL AS followers " +
+                "FROM users AS u WHERE u.user_id = ?;";
+        try {
+            jdbc.queryForObject(queryGet, mapper, id1);
+            jdbc.queryForObject(queryGet, mapper, id2);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundException("Пользователь не найден");
+        }
         String query = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?);";
         jdbc.update(query, id1, id2);
     }
