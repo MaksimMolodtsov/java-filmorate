@@ -18,8 +18,7 @@ import ru.yandex.practicum.filmorate.storage.user.dal.mappers.UserRowMapper;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Repository
@@ -79,8 +78,8 @@ public class UserDbStorage implements UserStorage {
     public User getUserById(Long id) {
         try {
             String query = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS" +
-                    " birthday, ARRAY_AGG(DISTINCT f1.friend_id) AS followers, ARRAY_AGG(DISTINCT f2.user_id) AS " +
-                    "friends FROM users AS u " +
+                    " birthday, ARRAY_AGG(DISTINCT f1.friend_id) AS friends, ARRAY_AGG(DISTINCT f2.user_id) AS " +
+                    "followers FROM users AS u " +
                     "LEFT JOIN friends AS f1 ON u.user_id = f1.user_id " +
                     "LEFT JOIN friends AS f2 ON u.user_id = f2.friend_id " +
                     "WHERE u.user_id = ? " +
@@ -130,4 +129,21 @@ public class UserDbStorage implements UserStorage {
         String query = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?;";
         jdbc.update(query, id1, id2);
     }
+
+    @Override
+    public Collection<User> getUsersByIds(Collection<Long> ids) {
+        if (ids.isEmpty()) return Set.of();
+        String idsForQuery = String.join(",", ids.stream().map(id -> "?").toList());
+        String queryForReplace = "SELECT " +
+                "u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS birthday, " +
+                "ARRAY_AGG(DISTINCT f1.friend_id) AS friends, ARRAY_AGG(DISTINCT f2.user_id) AS followers " +
+                "FROM users AS u " +
+                "LEFT JOIN friends AS f1 ON u.user_id = f1.user_id " +
+                "LEFT JOIN friends AS f2 ON u.user_id = f2.friend_id " +
+                "WHERE u.user_id IN (IDS) " +
+                "GROUP BY u.user_id;";
+        String query = queryForReplace.replace("IDS", idsForQuery);
+        return jdbc.query(query, mapper, ids.toArray());
+    }
+
 }

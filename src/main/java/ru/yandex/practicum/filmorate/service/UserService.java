@@ -8,10 +8,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -106,40 +103,34 @@ public class UserService {
     //Friends
 
     public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        if (idOfFirstFriend == null || idOfSecondFriend == null || idOfFirstFriend < 1 || idOfSecondFriend < 1)
-            throw new ValidationException("Неверный id");
-        if (Objects.equals(idOfFirstFriend, idOfSecondFriend)) throw new IllegalArgumentException("Одинаковые id");
+        User firstUser = getUserById(idOfFirstFriend);
+        User secondUser = getUserById(idOfSecondFriend);
         userStorage.addFriend(idOfFirstFriend, idOfSecondFriend);
-        log.debug("{} added {} in friends", idOfFirstFriend, idOfSecondFriend);
+        log.debug("{} added {} in friends", firstUser, secondUser);
     }
 
     public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
         User firstUser = getUserById(idOfFirstFriend);
         User secondUser = getUserById(idOfSecondFriend);
         userStorage.removeFriend(idOfFirstFriend, idOfSecondFriend);
-        log.debug("{} and {} are not friends", firstUser, secondUser);
-    }
-
-    public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
-        Set<User> friendsOfFirstFriend = new HashSet<>();
-        Set<User> friendsOfSecondFriend = new HashSet<>();
-        Set<Long> friendsIds1 = userStorage.getUserById(idOfFirstFriend).getFriends();
-        Set<Long> friendsIds2 = userStorage.getUserById(idOfSecondFriend).getFriends();
-        for (Long id: friendsIds1) {
-            User user = userStorage.getUserById(id);
-            friendsOfFirstFriend.add(user);
-        }
-        for (Long id: friendsIds2) {
-            User user = userStorage.getUserById(id);
-            friendsOfSecondFriend.add(user);
-        }
-        return friendsOfFirstFriend.stream().filter(friendsOfSecondFriend::contains).collect(Collectors.toSet());
+        log.debug("{} delete {} from friends", firstUser, secondUser);
     }
 
     public Set<User> friendsOfUser(Long id) {
-        if (id == null || id < 1) throw new IllegalArgumentException("Неверный id");
         User user = userStorage.getUserById(id);
         if (user.getFriends().isEmpty()) return Set.of();
-        return null;
+        Set<Long> friendIds = new HashSet<>(user.getFriends());
+        Collection<User> friendsCollection = userStorage.getUsersByIds(friendIds);
+        return friendsCollection.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
+        userStorage.getUserById(idOfFirstFriend);
+        userStorage.getUserById(idOfSecondFriend);
+        Set<User> commonFriends = new HashSet<>(friendsOfUser(idOfFirstFriend));
+        commonFriends.retainAll(friendsOfUser(idOfSecondFriend));
+        return commonFriends;
     }
 }

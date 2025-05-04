@@ -73,4 +73,14 @@ public class InMemoryUserStorage implements UserStorage {
         user2.getFollowers().remove(id1);
     }
 
+    @Override
+    public Collection<User> getUsersByIds(Collection<Long> ids) {
+        Set<User> friendUsers = new HashSet<>();
+        for (Long id : ids) {
+            User userById = getUserById(id);
+            friendUsers.add(userById);
+        }
+        return friendUsers;
+    }
+
 }
