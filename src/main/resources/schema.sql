@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS films (
 
 CREATE TABLE IF NOT EXISTS mpa_rating (
     rating_id int NOT NULL AUTO_INCREMENT,
-    rating varchar NOT NULL,
+    name varchar NOT NULL,
     CONSTRAINT rating_pk PRIMARY KEY (rating_id)
 );
 
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS film_genres (
 
 CREATE TABLE IF NOT EXISTS genres (
     genre_id int NOT NULL AUTO_INCREMENT,
-    title varchar,
+    name varchar,
     CONSTRAINT genres_pk PRIMARY KEY (genre_id)
 );
 

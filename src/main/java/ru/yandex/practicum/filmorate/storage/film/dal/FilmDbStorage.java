@@ -18,7 +18,7 @@ import ru.yandex.practicum.filmorate.storage.film.dal.mappers.FilmRowMapper;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.Collection;
-import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Repository
@@ -30,7 +30,31 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> allFilms() {
-        String query = "SELECT * FROM films;";
+        String query = """
+                    SELECT
+                    f.film_id AS film_id,
+                    f.name AS name,
+                    f.description AS description,
+                    f.release_date AS release_date,
+                    f.duration AS duration,
+                    f.rating_id AS rating_id,
+                    r.name AS rating_name,
+                    ARRAY_AGG(DISTINCT l.user_id) AS likes,
+                    CAST(
+                    JSON_ARRAYAGG(
+                    DISTINCT JSON_OBJECT(
+                    'id': g.genre_id,
+                    'name': g.name
+                    )
+                    ) FILTER (WHERE g.genre_id IS NOT NULL) AS VARCHAR
+                    ) AS genres
+                    FROM films AS f
+                    LEFT JOIN likes AS l ON f.film_id = l.film_id
+                    LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+                    LEFT JOIN genres AS g ON g.genre_id = fg.genre_id
+                    LEFT JOIN mpa_rating AS r ON f.rating_id = r.rating_id
+                    GROUP BY f.film_id;
+                    """;
         return jdbc.query(query, mapper);
     }
 
@@ -52,13 +76,10 @@ public class FilmDbStorage implements FilmStorage {
         } catch (DuplicateKeyException e) {
             throw new ValidationException("В базе данных уже содержится такой id");
         }
-        film.setId(keyHolder.getKeyAs(Long.class));
+        film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         for (Genre genre : film.getGenres()) {
             if (genre.getId() != null) {
-                int rowsUpdatedAddGenres = jdbc.update(queryAddGenres, film.getId(), genre.getId());
-                if (rowsUpdatedAddGenres == 0) {
-                    throw new RuntimeException("Не удалось добавить жанры фильма");
-                }
+                jdbc.update(queryAddGenres, film.getId(), genre.getId());
             }
         }
         return film;
@@ -66,15 +87,14 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film newFilm) {
+        getFilmById(newFilm.getId());
         String query = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? " +
                 "WHERE film_id = ?;";
         String queryRemoveGenres = "DELETE FROM film_genres WHERE film_id = ?;";
         String queryAddGenres = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        getFilmById(newFilm.getId());
-        Long newDuration = (newFilm.getDuration() == null) ? null : newFilm.getDuration().toSeconds();
-        Long newRating = (newFilm.getMpa() == null) ? null : newFilm.getMpa().getId();
+
         int rowsUpdated = jdbc.update(query, newFilm.getName(), newFilm.getDescription(), newFilm.getReleaseDate(),
-                newDuration, newRating, newFilm.getId());
+                newFilm.getDuration().toSeconds(), newFilm.getMpa().getId(), newFilm.getId());
         if (rowsUpdated == 0) {
             throw new RuntimeException("Не удалось обновить данные");
         }
@@ -90,13 +110,38 @@ public class FilmDbStorage implements FilmStorage {
                 }
             }
         }
-        return getFilmById(newFilm.getId());
+        return newFilm;
     }
 
     @Override
     public Film getFilmById(Long id) {
         try {
-            String query = "SELECT * FROM films WHERE film_id = ?;";
+            String query = """
+                    SELECT
+                    f.film_id AS film_id,
+                    f.name AS name,
+                    f.description AS description,
+                    f.release_date AS release_date,
+                    f.duration AS duration,
+                    f.rating_id AS rating_id,
+                    r.name AS rating_name,
+                    ARRAY_AGG(DISTINCT l.user_id) AS likes,
+                    CAST(
+                    JSON_ARRAYAGG(
+                    DISTINCT JSON_OBJECT(
+                    'id': g.genre_id,
+                    'name': g.name
+                    )
+                    ) FILTER (WHERE g.genre_id IS NOT NULL) AS VARCHAR
+                    ) AS genres
+                    FROM films AS f
+                    LEFT JOIN likes AS l ON f.film_id = l.film_id
+                    LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+                    LEFT JOIN genres AS g ON g.genre_id = fg.genre_id
+                    LEFT JOIN mpa_rating AS r ON f.rating_id = r.rating_id
+                    WHERE f.film_id = ?
+                    GROUP BY f.film_id;
+                    """;
             return jdbc.queryForObject(query, mapper, id);
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException(String.format("Фильм %d не найден", id));
@@ -114,9 +159,8 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public void addLike(Long filmId, Long userId) {
         String query = "INSERT INTO likes (film_id, user_id) VALUES (?, ?);";
-        try {
-            jdbc.update(query, filmId, userId);
-        } catch (DuplicateKeyException ignored) {}
+        jdbc.update(query, filmId, userId);
+
     }
 
     @Override
@@ -126,7 +170,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopularFilms(Integer count) {
+    public Collection<Film> getPopularFilms(Integer count) {
         return allFilms().stream()
                 .sorted((f1, f2) -> f2.getLikes().size() - f1.getLikes().size())
                 .limit(count)

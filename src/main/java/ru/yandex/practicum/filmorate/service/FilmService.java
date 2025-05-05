@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Collection;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -20,12 +19,15 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final MpaService mpaService;
+    private final GenreService genreService;
 
     public Collection<Film> allFilms() {
         return filmStorage.allFilms();
     }
 
     public Film addFilm(Film film) {
+        if (film == null) throw new IllegalArgumentException("Пустой объект");
         if (film.getReleaseDate() == null) {
             log.warn("Ошибка валидации: Должна быть указана дата релиза фильма {}", film);
             throw new ValidationException("Должна быть указана дата релиза фильма");
@@ -40,11 +42,18 @@ public class FilmService {
             log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
             throw new ValidationException("Продолжительность не может быть отрицательным числом");
         }
+        mpaService.getMpaById(film.getMpa().getId());
+        if (film.getMpa().getId() > 5) {
+            log.warn("Ошибка валидации: Неверный id рейтинга при добавлении фильма{}", film);
+            throw new ValidationException("Указан несуществующий рейтинг фильма");
+        }
+        genreService.validateFilmGenres(film);
         log.debug("Добавлен фильм {}", film);
         return filmStorage.addFilm(film);
     }
 
     public Film updateFilm(Film newFilm) {
+        if (newFilm == null) throw new IllegalArgumentException("Пустой объект");
         if (newFilm.getId() == null) {
             log.warn("Ошибка валидации: Id должен быть указан для {}", newFilm);
             throw new ValidationException("Id должен быть указан");
@@ -76,8 +85,14 @@ public class FilmService {
         } else {
             oldFilm.setDuration(newFilm.getDuration());
         }
-        log.debug("Обновлен фильм {}", oldFilm);
-        return filmStorage.updateFilm(oldFilm);
+        mpaService.getMpaById(newFilm.getMpa().getId());
+        if (newFilm.getMpa().getId() > 5) {
+            log.warn("Ошибка валидации: Неверный id рейтинга при обновлении фильма {}", newFilm);
+            throw new ValidationException("Указан несуществующий рейтинг фильма");
+        }
+        genreService.validateFilmGenres(newFilm);
+        log.debug("Обновлен фильм {}", newFilm);
+        return filmStorage.updateFilm(newFilm);
     }
 
     public Film getFilmById(Long id) {
@@ -114,8 +129,8 @@ public class FilmService {
         log.debug("The user {} deleted the like of the film {}", user, film);
     }
 
-    public List<Film> getPopularFilms(Integer count) {
-        if (count == null || count < 0) throw new IllegalArgumentException("Count should be a positive");
+    public Collection<Film> getPopularFilms(Integer count) {
+        if (count == null || count < 0) throw new IllegalArgumentException("Указано отрицательное количество фильмов");
         return filmStorage.getPopularFilms(count);
     }
 }

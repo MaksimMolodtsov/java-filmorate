@@ -16,15 +16,15 @@ public class MpaService {
 
     private final MpaDbStorage mpaDbStorage;
 
-    public Collection<Mpa> allRatings() {
-        return mpaDbStorage.allRatings();
+    public Collection<Mpa> allMpa() {
+        return mpaDbStorage.allMpa();
     }
 
-    public Mpa getRatingById(Long id) {
+    public Mpa getMpaById(Long id) {
         if (id == null) {
             log.warn("Ошибка валидации: Id должен быть указан для необходимого рейтинга");
             throw new ValidationException("Id должен быть указан");
         }
-        return mpaDbStorage.getRatingById(id);
+        return mpaDbStorage.getMpaById(id);
     }
 }

@@ -18,13 +18,13 @@ public class MpaController {
     private final MpaService mpaService;
 
     @GetMapping
-    public Collection<Mpa> allRatings() {
-        return mpaService.allRatings();
+    public Collection<Mpa> allMpa() {
+        return mpaService.allMpa();
     }
 
     @GetMapping("/{id}")
-    public Mpa getRatingById(@PathVariable Long id) {
-        return mpaService.getRatingById(id);
+    public Mpa getMpaById(@PathVariable Long id) {
+        return mpaService.getMpaById(id);
     }
 
 }

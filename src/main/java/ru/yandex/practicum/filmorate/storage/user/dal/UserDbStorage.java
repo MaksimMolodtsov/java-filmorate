@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.storage.user.dal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -55,8 +54,6 @@ public class UserDbStorage implements UserStorage {
             }, keyHolder);
         } catch (DuplicateKeyException e) {
             throw new ValidationException("В базе данных уже содержится такой id");
-        } catch (DataIntegrityViolationException ex) {
-            throw new NotFoundException("Ошибка данных пользователя");
         }
         user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         return getUserById(user.getId());

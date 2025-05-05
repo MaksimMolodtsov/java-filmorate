@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.jdbc.core.RowMapper;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.film.dal.MpaDbStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
 
+    MpaDbStorage mpaDbStorage;
+
     @Override
     public Film mapRow(ResultSet resultSet, int rowNum) throws SQLException {
         Film film = new Film();
@@ -33,23 +36,25 @@ public class FilmRowMapper implements RowMapper<Film> {
 
         Long rating = resultSet.getObject("rating_id", Long.class);
         if (rating != null) {
-            Mpa filmMpa = new Mpa();
-            filmMpa.setId(rating);
-            filmMpa.setTitle(resultSet.getString("rating"));
-            film.setMpa(filmMpa);
+            Mpa mpa = new Mpa();
+            mpa.setId(rating);
+            mpa.setName(resultSet.getString("rating_name"));
+            film.setMpa(mpa);
         }
 
         film.setLikes(doLongSet(resultSet.getArray("likes")));
 
         String genres = resultSet.getString("genres");
-        ObjectMapper objectMapper = new ObjectMapper();
+        if (genres != null && !genres.isBlank()) {
+            ObjectMapper objectMapper = new ObjectMapper();
             try {
-                Set<Genre> filmGenres = objectMapper.readValue(genres, new TypeReference<Set<Genre>>() {});
+                Set<Genre> filmGenres = objectMapper.readValue(genres, new TypeReference<>() {
+                });
                 film.setGenres(filmGenres);
             } catch (JsonProcessingException ignored) {
 
             }
-
+        }
         return film;
     }
 
@@ -61,5 +66,4 @@ public class FilmRowMapper implements RowMapper<Film> {
                 .map(o -> ((Number) o).longValue())
                 .collect(Collectors.toSet());
     }
-
 }

@@ -17,14 +17,14 @@ public class MpaDbStorage {
     private final JdbcTemplate jdbc;
     private final MpaRowMapper mapper;
 
-    public List<Mpa> allRatings() {
-        String query = "SELECT rating_id, rating FROM mpa_rating;";
+    public List<Mpa> allMpa() {
+        String query = "SELECT rating_id, name FROM mpa_rating;";
         return jdbc.query(query, mapper);
     }
 
-    public Mpa getRatingById(Long id) {
+    public Mpa getMpaById(Long id) {
         try {
-            String query = "SELECT rating_id, rating FROM mpa_rating WHERE rating_id = ?";
+            String query = "SELECT rating_id, name FROM mpa_rating WHERE rating_id = ?";
             return jdbc.queryForObject(query, mapper, id);
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException(String.format("Рейтинг %d не найден", id));

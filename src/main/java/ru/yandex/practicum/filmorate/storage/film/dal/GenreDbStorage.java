@@ -18,16 +18,26 @@ public class GenreDbStorage {
     private final GenreRowMapper mapper;
 
     public List<Genre> allGenres() {
-        String query = "SELECT genre_id, title FROM genres;";
+        String query = "SELECT genre_id, name FROM genres;";
         return jdbc.query(query, mapper);
     }
 
     public Genre getGenreById(Long id) {
         try {
-            String query = "SELECT genre_id, title FROM genres WHERE genre_id = ?";
+            String query = "SELECT genre_id, name FROM genres WHERE genre_id = ?";
             return jdbc.queryForObject(query, mapper, id);
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException(String.format("Жанр %d не найден", id));
+        }
+    }
+
+    public List<Genre> getGenreByIdDb(String idList) {
+        String queryForReplace = "SELECT genre_id, name FROM genres WHERE genre_id IN ( id_List )";
+        String query = queryForReplace.replace("id_List", idList);
+        try {
+            return jdbc.query(query, mapper);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NotFoundException("Жанр не найден");
         }
     }
 }
