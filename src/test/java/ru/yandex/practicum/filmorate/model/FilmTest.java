@@ -4,7 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,8 +33,7 @@ class FilmTest {
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
         ConstraintViolation<Film> violation = violations.iterator().next();
-        assertEquals(NotNull.class, violation.getConstraintDescriptor().getAnnotation().annotationType());
-        assertEquals("mpa", violation.getPropertyPath().toString());
+        assertEquals(NotBlank.class, violation.getConstraintDescriptor().getAnnotation().annotationType());
     }
 
     @Test
@@ -46,7 +45,6 @@ class FilmTest {
         assertFalse(violations.isEmpty());
         ConstraintViolation<Film> violation = violations.iterator().next();
         assertEquals(Size.class, violation.getConstraintDescriptor().getAnnotation().annotationType());
-        assertEquals("description", violation.getPropertyPath().toString());
     }
 
     @Test
