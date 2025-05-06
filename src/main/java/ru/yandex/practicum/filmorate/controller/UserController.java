@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+
 import java.util.Collection;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/users")
@@ -53,12 +53,12 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public Set<User> friendsOfUser(@PathVariable Long id) {
+    public Collection<User> friendsOfUser(@PathVariable Long id) {
         return userService.friendsOfUser(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Set<User> commonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+    public Collection<User> commonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.commonFriends(id, otherId);
     }
 }

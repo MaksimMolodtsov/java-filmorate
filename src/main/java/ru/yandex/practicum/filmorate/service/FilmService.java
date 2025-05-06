@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Collection;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -20,12 +19,67 @@ public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final MpaService mpaService;
+    private final GenreService genreService;
 
     public Collection<Film> allFilms() {
         return filmStorage.allFilms();
     }
 
     public Film addFilm(Film film) {
+        validateFilm(film);
+        log.debug("Добавлен фильм {}", film);
+        return filmStorage.addFilm(film);
+    }
+
+    public Film updateFilm(Film newFilm) {
+        Film oldFilm = validateFilmForUpdate(newFilm);
+        log.debug("Обновлен фильм {}", oldFilm);
+        return filmStorage.updateFilm(oldFilm);
+    }
+
+    public Film getFilmById(Long id) {
+        if (id == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для запрашиваемого фильма");
+            throw new ValidationException("Id должен быть указан");
+    }
+        return filmStorage.getFilmById(id);
+    }
+
+    public Film deleteFilmById(Long id) {
+        if (id == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для удаляемого фильма");
+            throw new ValidationException("Id должен быть указан");
+        }
+        Film film = filmStorage.deleteFilmById(id);
+        log.debug("Deleted film {}", film);
+        return film;
+    }
+
+    //Likes
+
+    public void addLike(Long filmId, Long userId) {
+        User user = userStorage.getUserById(userId);
+        Film film = filmStorage.getFilmById(filmId);
+        filmStorage.addLike(filmId, userId);
+        log.debug("The user {} added like to the film {}", user, film);
+    }
+
+    public void removeLike(Long filmId, Long userId) {
+        User user = userStorage.getUserById(userId);
+        Film film = filmStorage.getFilmById(filmId);
+        filmStorage.removeLike(filmId, userId);
+        log.debug("The user {} deleted the like of the film {}", user, film);
+    }
+
+    public Collection<Film> getPopularFilms(Integer count) {
+        return filmStorage.getPopularFilms(count);
+    }
+
+    //Validate
+
+    public void validateFilm(Film film) {
+        if (film == null) throw new IllegalArgumentException("Пустой объект");
         if (film.getReleaseDate() == null) {
             log.warn("Ошибка валидации: Должна быть указана дата релиза фильма {}", film);
             throw new ValidationException("Должна быть указана дата релиза фильма");
@@ -40,11 +94,12 @@ public class FilmService {
             log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
             throw new ValidationException("Продолжительность не может быть отрицательным числом");
         }
-        log.debug("Добавлен фильм {}", film);
-        return filmStorage.addFilm(film);
+        mpaService.getMpaById(film.getMpa().getId());
+        genreService.validateFilmGenres(film);
     }
 
-    public Film updateFilm(Film newFilm) {
+    public Film validateFilmForUpdate(Film newFilm) {
+        if (newFilm == null) throw new IllegalArgumentException("Пустой объект");
         if (newFilm.getId() == null) {
             log.warn("Ошибка валидации: Id должен быть указан для {}", newFilm);
             throw new ValidationException("Id должен быть указан");
@@ -76,49 +131,9 @@ public class FilmService {
         } else {
             oldFilm.setDuration(newFilm.getDuration());
         }
-        log.debug("Обновлен фильм {}", oldFilm);
-        return filmStorage.updateFilm(oldFilm);
+        mpaService.getMpaById(newFilm.getMpa().getId());
+        genreService.validateFilmGenres(newFilm);
+        return newFilm;
     }
 
-    public Film getFilmById(Long id) {
-        if (id == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для запрашиваемого фильма");
-            throw new ValidationException("Id должен быть указан");
-    }
-        return filmStorage.getFilmById(id);
-    }
-
-    public Film deleteFilmById(Long id) {
-        if (id == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для удаляемого фильма");
-            throw new ValidationException("Id должен быть указан");
-        }
-        Film film = filmStorage.deleteFilmById(id);
-        log.debug("Deleted film {}", film);
-        return film;
-    }
-
-    //Likes
-
-    public void addLike(Long filmId, Long userId) {
-        User user = userStorage.getUserById(userId);
-        Film film = filmStorage.getFilmById(filmId);
-        film.getLikes().add(user.getId());
-        log.debug("The user {} added like to the film {}", user, film);
-    }
-
-    public void removeLike(Long filmId, Long userId) {
-        User user = userStorage.getUserById(userId);
-        Film film = filmStorage.getFilmById(filmId);
-        film.getLikes().remove(user.getId());
-        log.debug("The user {} deleted the like of the film {}", user, film);
-    }
-
-    public List<Film> getPopularFilms(Integer count) {
-        if (count == null || count < 0) throw new IllegalArgumentException("Count should be a positive");
-        return filmStorage.allFilms().stream()
-                .sorted((film1, film2) -> film2.getLikes().size() - film1.getLikes().size())
-                .limit(count)
-                .toList();
-    }
 }

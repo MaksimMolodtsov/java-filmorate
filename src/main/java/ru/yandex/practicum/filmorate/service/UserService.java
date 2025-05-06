@@ -6,10 +6,9 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +22,74 @@ public class UserService {
         return userStorage.allUsers();
     }
 
+    public User updateUser(User newUser) {
+        User oldUser = validateUserForUpdate(newUser);
+        log.debug("Обновлен пользователь {}", oldUser);
+        return userStorage.updateUser(oldUser);
+    }
+
     public User addUser(User user) {
+        if (user == null) throw new IllegalArgumentException("Пустой объект");
+        validateUser(user);
+        log.debug("Добавлен пользователь {}", user);
+        return userStorage.addUser(user);
+    }
+
+    public User getUserById(Long id) {
+        if (id == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для запрашиваемого пользователя");
+            throw new ValidationException("Id должен быть указан");
+        }
+        return userStorage.getUserById(id);
+    }
+
+    public User deleteUserById(Long id) {
+        if (id == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для удаляемого пользователя");
+            throw new ValidationException("Id должен быть указан");
+        }
+        User user = userStorage.deleteUserById(id);
+        log.debug("Deleted user {}", user);
+        return user;
+    }
+
+    //Friends
+
+    public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
+        User firstUser = getUserById(idOfFirstFriend);
+        User secondUser = getUserById(idOfSecondFriend);
+        userStorage.addFriend(idOfFirstFriend, idOfSecondFriend);
+        log.debug("{} added {} in friends", firstUser, secondUser);
+    }
+
+    public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
+        User firstUser = getUserById(idOfFirstFriend);
+        User secondUser = getUserById(idOfSecondFriend);
+        userStorage.removeFriend(idOfFirstFriend, idOfSecondFriend);
+        log.debug("{} delete {} from friends", firstUser, secondUser);
+    }
+
+    public Set<User> friendsOfUser(Long id) {
+        User user = userStorage.getUserById(id);
+        if (user.getFriends().isEmpty()) return Set.of();
+        Set<Long> friendIds = new HashSet<>(user.getFriends());
+        Collection<User> friendsCollection = userStorage.getUsersByIds(friendIds);
+        return friendsCollection.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
+        userStorage.getUserById(idOfFirstFriend);
+        userStorage.getUserById(idOfSecondFriend);
+        Set<User> commonFriends = new HashSet<>(friendsOfUser(idOfFirstFriend));
+        commonFriends.retainAll(friendsOfUser(idOfSecondFriend));
+        return commonFriends;
+    }
+
+    //Validate
+
+    public void validateUser(User user) {
         if (user.getEmail() == null) {
             log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
             throw new ValidationException("e-mail должен быть указан для");
@@ -45,11 +111,10 @@ public class UserService {
             log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
             throw new ValidationException("Указана дата рождения в будущем");
         }
-        log.debug("Добавлен пользователь {}", user);
-        return userStorage.addUser(user);
     }
 
-    public User updateUser(User newUser) {
+    public User validateUserForUpdate(User newUser) {
+        if (newUser == null) throw new IllegalArgumentException("Пустой объект");
         if (newUser.getId() == null) {
             log.warn("Ошибка валидации: Id должен быть указан для {}", newUser);
             throw new ValidationException("Id должен быть указан");
@@ -78,68 +143,7 @@ public class UserService {
         } else {
             oldUser.setBirthday(newUser.getBirthday());
         }
-        log.debug("Обновлен пользователь {}", oldUser);
-        return userStorage.updateUser(oldUser);
+        return oldUser;
     }
 
-    public User getUserById(Long id) {
-        if (id == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для запрашиваемого пользователя");
-            throw new ValidationException("Id должен быть указан");
-        }
-        return userStorage.getUserById(id);
-    }
-
-    public User deleteUserById(Long id) {
-        if (id == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для удаляемого пользователя");
-            throw new ValidationException("Id должен быть указан");
-        }
-        User user = userStorage.deleteUserById(id);
-        log.debug("Deleted user {}", user);
-        return user;
-    }
-
-    //Friends
-
-    public void addFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        User firstUser = userStorage.getUserById(idOfFirstFriend);
-        User secondUser = userStorage.getUserById(idOfSecondFriend);
-        firstUser.getFriends().add(idOfSecondFriend);
-        secondUser.getFriends().add(idOfFirstFriend);
-        log.debug("{} and {} are friends", firstUser, secondUser);
-    }
-
-    public void removeFriend(Long idOfFirstFriend, Long idOfSecondFriend) {
-        User firstUser = userStorage.getUserById(idOfFirstFriend);
-        User secondUser = userStorage.getUserById(idOfSecondFriend);
-        firstUser.getFriends().remove(idOfSecondFriend);
-        secondUser.getFriends().remove(idOfFirstFriend);
-        log.debug("{} and {} are not friends", firstUser, secondUser);
-    }
-
-    public Set<User> commonFriends(Long idOfFirstFriend, Long idOfSecondFriend) {
-        Set<User> friendsOfFirstFriend = new HashSet<>();
-        Set<User> friendsOfSecondFriend = new HashSet<>();
-        Set<Long> friendsIds1 = userStorage.getUserById(idOfFirstFriend).getFriends();
-        Set<Long> friendsIds2 = userStorage.getUserById(idOfSecondFriend).getFriends();
-        for (Long id: friendsIds1) {
-            User user = userStorage.getUserById(id);
-            friendsOfFirstFriend.add(user);
-        }
-        for (Long id: friendsIds2) {
-            User user = userStorage.getUserById(id);
-            friendsOfSecondFriend.add(user);
-        }
-        return friendsOfFirstFriend.stream().filter(friendsOfSecondFriend::contains).collect(Collectors.toSet());
-    }
-
-    public Set<User> friendsOfUser(Long id) {
-        Set<User> friends = new HashSet<>();
-        for (Long friendsId: userStorage.getUserById(id).getFriends()) {
-            User friend = userStorage.getUserById(friendsId);
-            friends.add(friend);
-        }
-        return friends;
-    }
 }

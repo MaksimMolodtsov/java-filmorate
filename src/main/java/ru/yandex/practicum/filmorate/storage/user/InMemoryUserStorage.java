@@ -3,9 +3,8 @@ package ru.yandex.practicum.filmorate.storage.user;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
 
 @Component
 public class InMemoryUserStorage implements UserStorage {
@@ -57,4 +56,31 @@ public class InMemoryUserStorage implements UserStorage {
                 .orElse(0);
         return ++currentMaxId;
     }
+
+    @Override
+    public void addFriend(Long id1, Long id2) {
+        User user1 = getUserById(id1);
+        User user2 = getUserById(id2);
+        user1.getFriends().add(id2);
+        user2.getFollowers().add(id1);
+    }
+
+    @Override
+    public void removeFriend(Long id1, Long id2) {
+        User user1 = getUserById(id1);
+        User user2 = getUserById(id2);
+        user1.getFriends().remove(id2);
+        user2.getFollowers().remove(id1);
+    }
+
+    @Override
+    public Collection<User> getUsersByIds(Collection<Long> ids) {
+        Set<User> friendUsers = new HashSet<>();
+        for (Long id : ids) {
+            User userById = getUserById(id);
+            friendUsers.add(userById);
+        }
+        return friendUsers;
+    }
+
 }

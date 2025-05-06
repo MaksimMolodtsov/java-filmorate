@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class UserTest {
+
     private static final Validator validator;
 
     static {
@@ -25,13 +26,13 @@ class UserTest {
     }
 
     static User getUser() {
-        return User.builder()
-                .id(1L)
-                .login("Логин")
-                .email("abc@cba.com")
-                .name("Имя")
-                .birthday(LocalDate.of(2000, 5, 5))
-                .build();
+        User user = new User();
+        user.setId(1L);
+        user.setLogin("Логин");
+        user.setEmail("abc@cba.com");
+        user.setName("Имя");
+        user.setBirthday(LocalDate.of(2000, 5, 5));
+        return user;
     }
 
     @Test
