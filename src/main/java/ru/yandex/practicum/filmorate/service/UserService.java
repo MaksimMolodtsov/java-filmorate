@@ -23,61 +23,14 @@ public class UserService {
     }
 
     public User updateUser(User newUser) {
-        if (newUser.getId() == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для {}", newUser);
-            throw new ValidationException("Id должен быть указан");
-        }
-        User oldUser = userStorage.getUserById(newUser.getId());
-        if (newUser.getEmail() == null) {
-            oldUser.setEmail(oldUser.getEmail());
-        } else {
-            oldUser.setEmail(newUser.getEmail());
-        }
-        if (newUser.getLogin() == null) {
-            oldUser.setLogin(oldUser.getLogin());
-        } else {
-            oldUser.setLogin(newUser.getLogin());
-        }
-        if (newUser.getName() == null || newUser.getName().isBlank()) {
-            oldUser.setName(oldUser.getName());
-        } else {
-            oldUser.setName(newUser.getName());
-        }
-        if (newUser.getBirthday() == null) {
-            oldUser.setBirthday(oldUser.getBirthday());
-        } else if (newUser.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
-            log.warn("Ошибка валидации: Указана неверная дата рождения для {}", newUser);
-            throw new ValidationException("Указана дата рождения в будущем");
-        } else {
-            oldUser.setBirthday(newUser.getBirthday());
-        }
+        User oldUser = validateUserForUpdate(newUser);
         log.debug("Обновлен пользователь {}", oldUser);
         return userStorage.updateUser(oldUser);
     }
 
     public User addUser(User user) {
         if (user == null) throw new IllegalArgumentException("Пустой объект");
-        if (user.getEmail() == null) {
-            log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
-            throw new ValidationException("e-mail должен быть указан для");
-        } else {
-            for (User u : allUsers()) {
-                if (u.getEmail().equals(user.getEmail())) {
-                    log.warn("Этот e-mail уже используется для {}", u);
-                    throw new ValidationException("Этот e-mail уже используется");
-                }
-            }
-        }
-        if (user.getName() == null) {
-            user.setName(user.getLogin());
-        }
-        if (user.getBirthday() == null) {
-            log.warn("Ошибка валидации: Необходимо указать дату рождения для {}", user);
-            throw new ValidationException("Необходимо указать дату рождения");
-        } else if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
-            log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
-            throw new ValidationException("Указана дата рождения в будущем");
-        }
+        validateUser(user);
         log.debug("Добавлен пользователь {}", user);
         return userStorage.addUser(user);
     }
@@ -133,4 +86,64 @@ public class UserService {
         commonFriends.retainAll(friendsOfUser(idOfSecondFriend));
         return commonFriends;
     }
+
+    //Validate
+
+    public void validateUser(User user) {
+        if (user.getEmail() == null) {
+            log.warn("Ошибка валидации: e-mail должен быть указан для {}", user);
+            throw new ValidationException("e-mail должен быть указан для");
+        } else {
+            for (User u : allUsers()) {
+                if (u.getEmail().equals(user.getEmail())) {
+                    log.warn("Этот e-mail уже используется для {}", u);
+                    throw new ValidationException("Этот e-mail уже используется");
+                }
+            }
+        }
+        if (user.getName() == null) {
+            user.setName(user.getLogin());
+        }
+        if (user.getBirthday() == null) {
+            log.warn("Ошибка валидации: Необходимо указать дату рождения для {}", user);
+            throw new ValidationException("Необходимо указать дату рождения");
+        } else if (user.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
+            log.warn("Ошибка валидации: Указана дата рождения в будущем для {}", user);
+            throw new ValidationException("Указана дата рождения в будущем");
+        }
+    }
+
+    public User validateUserForUpdate(User newUser) {
+        if (newUser == null) throw new IllegalArgumentException("Пустой объект");
+        if (newUser.getId() == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для {}", newUser);
+            throw new ValidationException("Id должен быть указан");
+        }
+        User oldUser = userStorage.getUserById(newUser.getId());
+        if (newUser.getEmail() == null) {
+            oldUser.setEmail(oldUser.getEmail());
+        } else {
+            oldUser.setEmail(newUser.getEmail());
+        }
+        if (newUser.getLogin() == null) {
+            oldUser.setLogin(oldUser.getLogin());
+        } else {
+            oldUser.setLogin(newUser.getLogin());
+        }
+        if (newUser.getName() == null || newUser.getName().isBlank()) {
+            oldUser.setName(oldUser.getName());
+        } else {
+            oldUser.setName(newUser.getName());
+        }
+        if (newUser.getBirthday() == null) {
+            oldUser.setBirthday(oldUser.getBirthday());
+        } else if (newUser.getBirthday().isAfter(LocalDateTime.now().toLocalDate())) {
+            log.warn("Ошибка валидации: Указана неверная дата рождения для {}", newUser);
+            throw new ValidationException("Указана дата рождения в будущем");
+        } else {
+            oldUser.setBirthday(newUser.getBirthday());
+        }
+        return oldUser;
+    }
+
 }

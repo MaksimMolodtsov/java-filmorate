@@ -171,10 +171,34 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getPopularFilms(Integer count) {
-        return allFilms().stream()
-                .sorted((f1, f2) -> f2.getLikes().size() - f1.getLikes().size())
-                .limit(count)
-                .toList();
+        String query = """
+                    SELECT
+                    f.film_id AS film_id,
+                    f.name AS name,
+                    f.description AS description,
+                    f.release_date AS release_date,
+                    f.duration AS duration,
+                    f.rating_id AS rating_id,
+                    r.name AS rating_name,
+                    ARRAY_AGG(DISTINCT l.user_id) AS likes,
+                    CAST(
+                    JSON_ARRAYAGG(
+                    DISTINCT JSON_OBJECT(
+                    'id': g.genre_id,
+                    'name': g.name
+                    )
+                    ) FILTER (WHERE g.genre_id IS NOT NULL) AS VARCHAR
+                    ) AS genres
+                    FROM films AS f
+                    LEFT JOIN likes AS l ON f.film_id = l.film_id
+                    LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+                    LEFT JOIN genres AS g ON g.genre_id = fg.genre_id
+                    LEFT JOIN mpa_rating AS r ON f.rating_id = r.rating_id
+                    GROUP BY f.film_id
+                    ORDER BY COUNT(DISTINCT l.user_id) DESC
+                    LIMIT ?;
+                    """;
+        return jdbc.query(query, mapper, count);
     }
 
 }

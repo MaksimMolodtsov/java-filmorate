@@ -53,6 +53,7 @@ public class FilmController {
 
     @GetMapping("/popular")
     public Collection<Film> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
+        if (count == null || count < 0) throw new IllegalArgumentException("Указано отрицательное количество фильмов");
         return filmService.getPopularFilms(count);
     }
 }

@@ -89,32 +89,16 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User deleteUserById(Long id) {
-        User user;
-        String queryGet = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, u.birthday AS " +
-                "birthday, NULL AS followers, NULL AS friends " +
-                "FROM users AS u WHERE u.user_id = ?;";
+        User user = getUserById(id);
         String queryDelete = "DELETE FROM users WHERE user_id = ?;";
-        try {
-            user = jdbc.queryForObject(queryGet, mapper, id);
-        } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException("Пользователь не найден");
-        }
         jdbc.update(queryDelete, id);
         return user;
     }
 
     @Override
     public void addFriend(Long id1, Long id2) {
-        String queryGet = "SELECT u.user_id AS id, u.email AS email, u.login AS login, u.name AS name, " +
-                "u.birthday AS birthday, " +
-                "NULL AS friends, NULL AS followers " +
-                "FROM users AS u WHERE u.user_id = ?;";
-        try {
-            jdbc.queryForObject(queryGet, mapper, id1);
-            jdbc.queryForObject(queryGet, mapper, id2);
-        } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        getUserById(id1);
+        getUserById(id2);
         String query = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?);";
         jdbc.update(query, id1, id2);
     }

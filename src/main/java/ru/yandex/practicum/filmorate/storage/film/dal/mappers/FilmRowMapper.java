@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.jdbc.core.RowMapper;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.film.dal.MpaDbStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,8 +21,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
-
-    MpaDbStorage mpaDbStorage;
 
     @Override
     public Film mapRow(ResultSet resultSet, int rowNum) throws SQLException {

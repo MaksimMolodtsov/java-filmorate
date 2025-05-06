@@ -27,72 +27,15 @@ public class FilmService {
     }
 
     public Film addFilm(Film film) {
-        if (film == null) throw new IllegalArgumentException("Пустой объект");
-        if (film.getReleaseDate() == null) {
-            log.warn("Ошибка валидации: Должна быть указана дата релиза фильма {}", film);
-            throw new ValidationException("Должна быть указана дата релиза фильма");
-        } else if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-            log.warn("Ошибка валидации: Дата релиза должна быть позже 28.12.1895 для {}", film);
-            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
-        }
-        if (film.getDuration() == null) {
-            log.warn("Ошибка валидации: Должны быть указана продолжительность фильма для {}", film);
-            throw new ValidationException("Должны быть указана продолжительность фильма");
-        } else if (film.getDuration().isNegative()) {
-            log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
-            throw new ValidationException("Продолжительность не может быть отрицательным числом");
-        }
-        mpaService.getMpaById(film.getMpa().getId());
-        if (film.getMpa().getId() > 5) {
-            log.warn("Ошибка валидации: Неверный id рейтинга при добавлении фильма{}", film);
-            throw new ValidationException("Указан несуществующий рейтинг фильма");
-        }
-        genreService.validateFilmGenres(film);
+        validateFilm(film);
         log.debug("Добавлен фильм {}", film);
         return filmStorage.addFilm(film);
     }
 
     public Film updateFilm(Film newFilm) {
-        if (newFilm == null) throw new IllegalArgumentException("Пустой объект");
-        if (newFilm.getId() == null) {
-            log.warn("Ошибка валидации: Id должен быть указан для {}", newFilm);
-            throw new ValidationException("Id должен быть указан");
-        }
-        Film oldFilm = filmStorage.getFilmById(newFilm.getId());
-        if (newFilm.getName() == null) {
-            oldFilm.setName(oldFilm.getName());
-        } else {
-            oldFilm.setName(newFilm.getName());
-        }
-        if (newFilm.getDescription() == null) {
-            oldFilm.setDescription(oldFilm.getDescription());
-        } else {
-            oldFilm.setDescription(newFilm.getDescription());
-        }
-        if (newFilm.getReleaseDate() == null) {
-            oldFilm.setReleaseDate(oldFilm.getReleaseDate());
-        } else if (newFilm.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-            log.warn("Ошибка валидации: Дата выхода фильма должна быть позже 28.12.1895 для {}", newFilm);
-            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
-        } else {
-            oldFilm.setReleaseDate(newFilm.getReleaseDate());
-        }
-        if (newFilm.getDuration() == null) {
-            oldFilm.setDuration(oldFilm.getDuration());
-        } else if (newFilm.getDuration().isNegative()) {
-            log.warn("Ошибка валидации: Продолжительность фильма не может быть отрицательным числом для {}", newFilm);
-            throw new ValidationException("Продолжительность не может быть отрицательным числом");
-        } else {
-            oldFilm.setDuration(newFilm.getDuration());
-        }
-        mpaService.getMpaById(newFilm.getMpa().getId());
-        if (newFilm.getMpa().getId() > 5) {
-            log.warn("Ошибка валидации: Неверный id рейтинга при обновлении фильма {}", newFilm);
-            throw new ValidationException("Указан несуществующий рейтинг фильма");
-        }
-        genreService.validateFilmGenres(newFilm);
-        log.debug("Обновлен фильм {}", newFilm);
-        return filmStorage.updateFilm(newFilm);
+        Film oldFilm = validateFilmForUpdate(newFilm);
+        log.debug("Обновлен фильм {}", oldFilm);
+        return filmStorage.updateFilm(oldFilm);
     }
 
     public Film getFilmById(Long id) {
@@ -130,7 +73,67 @@ public class FilmService {
     }
 
     public Collection<Film> getPopularFilms(Integer count) {
-        if (count == null || count < 0) throw new IllegalArgumentException("Указано отрицательное количество фильмов");
         return filmStorage.getPopularFilms(count);
     }
+
+    //Validate
+
+    public void validateFilm(Film film) {
+        if (film == null) throw new IllegalArgumentException("Пустой объект");
+        if (film.getReleaseDate() == null) {
+            log.warn("Ошибка валидации: Должна быть указана дата релиза фильма {}", film);
+            throw new ValidationException("Должна быть указана дата релиза фильма");
+        } else if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
+            log.warn("Ошибка валидации: Дата релиза должна быть позже 28.12.1895 для {}", film);
+            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
+        }
+        if (film.getDuration() == null) {
+            log.warn("Ошибка валидации: Должны быть указана продолжительность фильма для {}", film);
+            throw new ValidationException("Должны быть указана продолжительность фильма");
+        } else if (film.getDuration().isNegative()) {
+            log.warn("Ошибка валидации: Продолжительность не может быть отрицательным числом для {}", film);
+            throw new ValidationException("Продолжительность не может быть отрицательным числом");
+        }
+        mpaService.getMpaById(film.getMpa().getId());
+        genreService.validateFilmGenres(film);
+    }
+
+    public Film validateFilmForUpdate(Film newFilm) {
+        if (newFilm == null) throw new IllegalArgumentException("Пустой объект");
+        if (newFilm.getId() == null) {
+            log.warn("Ошибка валидации: Id должен быть указан для {}", newFilm);
+            throw new ValidationException("Id должен быть указан");
+        }
+        Film oldFilm = filmStorage.getFilmById(newFilm.getId());
+        if (newFilm.getName() == null) {
+            oldFilm.setName(oldFilm.getName());
+        } else {
+            oldFilm.setName(newFilm.getName());
+        }
+        if (newFilm.getDescription() == null) {
+            oldFilm.setDescription(oldFilm.getDescription());
+        } else {
+            oldFilm.setDescription(newFilm.getDescription());
+        }
+        if (newFilm.getReleaseDate() == null) {
+            oldFilm.setReleaseDate(oldFilm.getReleaseDate());
+        } else if (newFilm.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
+            log.warn("Ошибка валидации: Дата выхода фильма должна быть позже 28.12.1895 для {}", newFilm);
+            throw new ValidationException("Дата релиза должна быть позже 28.12.1895");
+        } else {
+            oldFilm.setReleaseDate(newFilm.getReleaseDate());
+        }
+        if (newFilm.getDuration() == null) {
+            oldFilm.setDuration(oldFilm.getDuration());
+        } else if (newFilm.getDuration().isNegative()) {
+            log.warn("Ошибка валидации: Продолжительность фильма не может быть отрицательным числом для {}", newFilm);
+            throw new ValidationException("Продолжительность не может быть отрицательным числом");
+        } else {
+            oldFilm.setDuration(newFilm.getDuration());
+        }
+        mpaService.getMpaById(newFilm.getMpa().getId());
+        genreService.validateFilmGenres(newFilm);
+        return newFilm;
+    }
+
 }
